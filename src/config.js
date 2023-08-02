@@ -1,6 +1,6 @@
 const config = {
   blogName: "Blog",
-  authorName: "Miles.lee",
+  authorName: "Miles.lee2",
   authorDescription:
     "a web developer and design enthusiast who's building stuff in Dubai",
   authorWebsite: "https://kartikn.me",
