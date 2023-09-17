@@ -6,9 +6,24 @@ on:
          service-name:
             description: 'Service Name'     
             required: true
+            default: client-user-promotion
          service-env:
             description: 'Service Environtment'     
             required: true
+            type: choice
+            options:
+            - dev 
+            - stage
+            - test
+            - prod
+         brand-name:
+            description: "Brand Name"
+            required: true
+            type: choice
+            options:
+            - global
+            - wsop
+
 
 permissions: write-all
 
