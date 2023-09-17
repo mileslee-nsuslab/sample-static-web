@@ -1,14 +1,14 @@
 name: "Build and Deploy"
 
 on:
-  workflow_call:
-    inputs:
-      service-env:
-        type: string
-        required: true
-      service-name:
-        type: string
-        required: true
+   workflow_dispatch:
+      inputs:
+         service-name:
+            description: 'Service name'     
+            required: true
+         service-env:
+            description: 'Service env'     
+            required: true
 
 permissions: write-all
 
