@@ -45,7 +45,6 @@ jobs:
         run: |
           export distribution_id=$( aws cloudfront list-distributions --query 'DistributionList.Items[?Origins.Items[?Id==`"${{ inputs.service-name }}-${{ inputs.service-env }}.s3-website.'${aws_region}'.amazonaws.com"`]].{Id: Id}' --output text)
           aws cloudfront create-invalidation --distribution-id=$distribution_id --paths "/*"
-          jobs:
   invalidate-cache-wsop:
     if: ${{ inputs.brand-name == 'wsop' }}
     runs-on: ubuntu-latest
