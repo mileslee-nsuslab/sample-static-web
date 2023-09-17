@@ -39,16 +39,15 @@ jobs:
           aws s3 sync --region ap-northeast-2 ./ s3://${{ inputs.service-name }}-${{ inputs.service-env }} --delete
           # aws s3 sync --region ap-northeast-2 ./dist s3://${{ inputs.service-name }}-wsop-${{ inputs.service-env }} --delete
         working-directory: ./public
-      - name: Develop Deploy
+      - name: Invalidatre Cache
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEVOPS }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEVOPS }}
           AWS_DEFAULT_REGION: us-east-1
           aws_region: us-east-1
         run: |
-          export distribution_id=$( aws cloudfront list-distributions --query 'DistributionList.Items[?Origins.Items[?Id==`"miles-test-bucket-green.s3-website-'${aws_region}'.amazonaws.com"`]].{Id: Id}' --output text)
+          export distribution_id=$( aws cloudfront list-distributions --query 'DistributionList.Items[?Origins.Items[?Id==`"${{ inputs.service-name }}-${{ inputs.service-env }}.s3-website-'${aws_region}'.amazonaws.com"`]].{Id: Id}' --output text)
           aws cloudfront create-invalidation --distribution-id=$distribution_id --paths "/*"
-
 
   test-deploy:
     if: ${{ inputs.service-env == 'test' }}
