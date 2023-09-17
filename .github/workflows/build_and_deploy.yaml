@@ -1,0 +1,178 @@
+name: "Build and Deploy"
+
+on:
+  workflow_call:
+    inputs:
+      service-env:
+        type: string
+        required: true
+      service-name:
+        type: string
+        required: true
+
+permissions: write-all
+
+jobs:
+  develop-deploy:
+    if: ${{ inputs.service-env == 'dev' }}
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Build
+        run: yarn workspace ${{ inputs.service-name }} build:dev
+
+      - name: Develop Deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEVOPS }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEVOPS }}
+          aws-region: ap-northeast-2
+        run: |
+          aws s3 sync --region ap-northeast-2 ./dist s3://${{ inputs.service-name }}-${{ inputs.service-env }} --delete
+          # aws s3 sync --region ap-northeast-2 ./dist s3://${{ inputs.service-name }}-wsop-${{ inputs.service-env }} --delete
+        working-directory: ./services/${{ inputs.service-name }}
+      - name: Develop Deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEVOPS }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEVOPS }}
+          aws-region: ap-northeast-2
+        run: |
+          export distribution_id=$( aws cloudfront list-distributions --query 'DistributionList.Items[?Origins.Items[?Id==`"miles-test-bucket-green.s3-website-'${aws-region}'.amazonaws.com"`]].{Id: Id}' --output text)
+          aws cloudfront create-invalidation --distribution-id=$distribution_id --paths "/*"
+
+
+  test-deploy:
+    if: ${{ inputs.service-env == 'test' }}
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Build
+        run: yarn workspace ${{ inputs.service-name }} build:test
+
+      - name: Test Global Deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_GLOBAL }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_GLOBAL }}
+          aws-region: ap-northeast-2
+        run: |
+          aws s3 sync --region ap-northeast-2 ./dist s3://${{ inputs.service-name }}-${{ inputs.service-env }} --delete
+        working-directory: ./services/${{ inputs.service-name }}
+
+      - name: Test WSOP Deploy
+        env:
+         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_WSOP }}
+         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_WSOP }}
+         aws-region: us-east-1
+        run: |
+         aws s3 sync --region us-east-1 ./dist s3://${{ inputs.service-name }}-wsop-${{ inputs.service-env }} --delete
+        working-directory: ./services/${{ inputs.service-name }}
+
+  stage-deploy:
+    if: ${{ inputs.service-env == 'stage' }}
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Build
+        run: yarn workspace ${{ inputs.service-name }} build:stage
+
+      - name: Stage Global Deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_GLOBAL }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_GLOBAL }}
+          aws-region: ap-east-1
+        run: |
+          aws s3 sync --region ap-east-1 ./dist s3://${{ inputs.service-name }}-${{ inputs.service-env }} --delete
+        working-directory: ./services/${{ inputs.service-name }}
+      
+      - name: Stage WSOP Deploy
+        env:
+         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_WSOP }}
+         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_WSOP }}
+         aws-region: us-east-1
+        run: |
+         aws s3 sync --region us-east-1 ./dist s3://${{ inputs.service-name }}-wsop-${{ inputs.service-env }} --delete
+        working-directory: ./services/${{ inputs.service-name }}
+
+  production-deploy:
+    if: ${{ inputs.service-env == 'prod' }}
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Build
+        run: yarn workspace ${{ inputs.service-name }} build:prod
+
+      - name: Production Global Deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_GLOBAL }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_GLOBAL }}
+          aws-region: ap-northeast-2
+        run: |
+          aws s3 sync --region ap-northeast-2 ./dist s3://${{ inputs.service-name }}-2ace-${{ inputs.service-env }}.ggcore.net --delete
+          aws s3 sync --region ap-northeast-2 ./dist s3://${{ inputs.service-name }}-davaopoker-${{ inputs.service-env }}.ggcore.net --delete
+          aws s3 sync --region ap-northeast-2 ./dist s3://${{ inputs.service-name }}-ggpcom-${{ inputs.service-env }}.ggcore.net --delete
+          aws s3 sync --region ap-northeast-2 ./dist s3://${{ inputs.service-name }}-ggpokeruk-${{ inputs.service-env }}.ggcore.net --delete
+          aws s3 sync --region ap-northeast-2 ./dist s3://${{ inputs.service-name }}-mbp-${{ inputs.service-env }}.ggcore.net --delete
+          aws s3 sync --region ap-northeast-2 ./dist s3://${{ inputs.service-name }}-pokerok-${{ inputs.service-env }}.ggcore.net --delete
+        working-directory: ./services/${{ inputs.service-name }}
+
+      - name: Production N8 Deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_N8 }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_N8 }}
+          aws-region: ap-northeast-2
+        run: |
+          aws s3 sync --region ap-northeast-2 ./dist s3://${{ inputs.service-name }}-natural8-${{ inputs.service-env }}.ggcore.net --delete
+        working-directory: ./services/${{ inputs.service-name }}
+
+      - name: Production 7XL Deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_7XL }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_7XL }}
+          aws-region: ap-northeast-2
+        run: |
+          aws s3 sync --region ap-northeast-2 ./dist s3://${{ inputs.service-name }}-7xl-${{ inputs.service-env }}.ggcore.net --delete
+        working-directory: ./services/${{ inputs.service-name }}
+
+      - name: Production WSOP Deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_WSOP }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_WSOP }}
+          aws-region: ap-northeast-2
+        run: |
+          aws s3 sync --region ap-northeast-2 ./dist s3://${{ inputs.service-name }}-wsop-${{ inputs.service-env }}.ggcore.net --delete
+        working-directory: ./services/${{ inputs.service-name }}
