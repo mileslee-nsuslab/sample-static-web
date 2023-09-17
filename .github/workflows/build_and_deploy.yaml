@@ -46,6 +46,7 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
           aws_region: us-east-1
         run: |
+          # Edit s3-website-'${aws_region}' to s3-website.'${aws_region}' when region is ap-northeast-2
           export distribution_id=$( aws cloudfront list-distributions --query 'DistributionList.Items[?Origins.Items[?Id==`"${{ inputs.service-name }}-${{ inputs.service-env }}.s3-website-'${aws_region}'.amazonaws.com"`]].{Id: Id}' --output text)
           aws cloudfront create-invalidation --distribution-id=$distribution_id --paths "/*"
 
