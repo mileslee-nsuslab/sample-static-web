@@ -47,7 +47,7 @@ jobs:
           aws cloudfront create-invalidation --distribution-id=$distribution_id --paths "/*"
           jobs:
   invalidate-cache-wsop:
-    if: ${{ inputs.brand-name == 'global' }}
+    if: ${{ inputs.brand-name == 'wsop' }}
     runs-on: ubuntu-latest
     permissions:
       security-events: write
