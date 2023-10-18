@@ -1,0 +1,6 @@
+{
+    "sonarlint.connectedMode.project": {
+        "connectionId": "https-devops-sonarqube-greatgameplatform-com",
+        "projectKey": "mileslee-nsuslab_springboot-study_AYqyTUcUgBddw1EpPUT6"
+    }
+}

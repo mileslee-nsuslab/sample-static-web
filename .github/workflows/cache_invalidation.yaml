@@ -6,7 +6,12 @@ on:
          service-name:
             description: 'Service Name'     
             required: true
-            default: client-user-promotion
+            type: choice
+            options:
+            - admin-agent
+            - admin-operator
+            - admin-promotion
+            default: admin-agent
          service-env:
             description: 'Service Environtment'     
             required: true
@@ -17,7 +22,7 @@ on:
             - test
             - prod
          brand-name:
-            description: "Brand Name"
+            description: "Brand"
             required: true
             type: choice
             options:
@@ -36,10 +41,21 @@ jobs:
       contents: read
       actions: read
     steps:
-      - name: Invalidatre Cache
+      - name: Invalidate Cache Dev
+        if: ${{ inputs.service-env == 'dev' }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_DEVOPS }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEVOPS }}
+          AWS_DEFAULT_REGION: ap-northeast-2
+          aws_region: ap-northeast-2
+        run: |
+          export distribution_id=$( aws cloudfront list-distributions --query 'DistributionList.Items[?Origins.Items[?Id==`"${{ inputs.service-name }}-${{ inputs.service-env }}.s3-website.'${aws_region}'.amazonaws.com"`]].{Id: Id}' --output text)
+          aws cloudfront create-invalidation --distribution-id=$distribution_id --paths "/*"
+      - name: Invalidate Cache test
+        if: ${{ inputs.service-env == 'test' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_GLOBAL }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_GLOBAL }}
           AWS_DEFAULT_REGION: ap-northeast-2
           aws_region: ap-northeast-2
         run: |
